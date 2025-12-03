@@ -1,4 +1,4 @@
-# Mental Health Project
+# Data Analysis Project
 
 This project aims to display some correlations on a mental-health-related dataset using charts and plots.
 
