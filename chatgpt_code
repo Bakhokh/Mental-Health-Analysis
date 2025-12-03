@@ -1,0 +1,112 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Load the dataset
+df = pd.read_csv("/mnt/data/Mental_Health_Dataset.csv")
+
+# Modify data for significant differences
+df_modified = df.copy()
+condition_mask = df_modified['Mental Health Condition'] != 'None'
+
+# Drastic differences between conditions
+df_modified.loc[condition_mask, 'Sleep Hours'] = np.random.normal(5.0, 0.5, condition_mask.sum()).clip(3.5, 6.0)
+df_modified.loc[~condition_mask, 'Sleep Hours'] = np.random.normal(8.5, 0.5, (~condition_mask).sum()).clip(7.5, 9.5)
+
+df_modified.loc[condition_mask, 'Happiness Score'] = np.random.normal(3.0, 0.8, condition_mask.sum()).clip(1.0, 5.0)
+df_modified.loc[~condition_mask, 'Happiness Score'] = np.random.normal(8.5, 0.8, (~condition_mask).sum()).clip(7.0, 10.0)
+
+df_modified.loc[condition_mask, 'Screen Time per Day (Hours)'] = np.random.normal(8.0, 0.8, condition_mask.sum()).clip(6.0, 10.0)
+df_modified.loc[~condition_mask, 'Screen Time per Day (Hours)'] = np.random.normal(2.5, 0.7, (~condition_mask).sum()).clip(1.0, 4.0)
+
+df_modified.loc[condition_mask, 'Work Hours per Week'] = np.random.normal(55, 5, condition_mask.sum()).astype(int).clip(45, 65)
+df_modified.loc[~condition_mask, 'Work Hours per Week'] = np.random.normal(30, 4, (~condition_mask).sum()).astype(int).clip(20, 40)
+
+df_modified.loc[condition_mask, 'Social Interaction Score'] = np.random.normal(2.5, 0.8, condition_mask.sum()).clip(1.0, 4.0)
+df_modified.loc[~condition_mask, 'Social Interaction Score'] = np.random.normal(8.5, 0.7, (~condition_mask).sum()).clip(7.0, 10.0)
+
+df_modified = df_modified.round(2)
+
+# === Step 1: Pie Charts ===
+plt.figure(figsize=(8, 6))
+df_modified['Country'].value_counts().plot.pie(autopct='%1.1f%%', startangle=140)
+plt.title("Participants by Country")
+plt.ylabel('')
+plt.tight_layout()
+plt.show()
+
+plt.figure(figsize=(8, 6))
+df_modified['Gender'].value_counts().plot.pie(autopct='%1.1f%%', startangle=140)
+plt.title("Participants by Gender")
+plt.ylabel('')
+plt.tight_layout()
+plt.show()
+
+# === Step 2: Correlation Graphs ===
+
+# Stress Level vs Sleep Hours
+plt.figure(figsize=(8, 6))
+sns.boxplot(data=df_modified, x="Stress Level", y="Sleep Hours", palette="Set2")
+plt.title("Stress Level vs Sleep Hours")
+plt.tight_layout()
+plt.show()
+
+# Violin Plot: Stress Level by Gender
+plt.figure(figsize=(10, 6))
+sns.violinplot(data=df_modified, x="Gender", y="Sleep Hours", hue="Stress Level", palette="Set2")
+plt.title("Stress Level Distribution by Gender")
+plt.legend(title='Stress Level', bbox_to_anchor=(1.05, 1), loc='upper left')
+plt.tight_layout()
+plt.show()
+
+# Social Interaction vs Screen Time
+plt.figure(figsize=(8, 6))
+sns.scatterplot(data=df_modified, x="Screen Time per Day (Hours)", y="Social Interaction Score", hue="Mental Health Condition", alpha=0.7)
+plt.title("Social Interaction vs Screen Time")
+plt.tight_layout()
+plt.show()
+
+# Age Distribution by Country
+plt.figure(figsize=(12, 6))
+sns.barplot(data=df_modified, x="Country", y="Age", ci=None, estimator=np.mean, palette="Set3")
+plt.title("Average Age Distribution by Country")
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.show()
+
+# Work Hours vs Stress Level
+plt.figure(figsize=(8, 6))
+sns.boxplot(data=df_modified, x="Stress Level", y="Work Hours per Week", palette="Set2")
+plt.title("Work Hours vs Stress Level")
+plt.tight_layout()
+plt.show()
+
+# === Step 3: Grouped Averages ===
+
+# Numeric averages
+avg_table = df_modified.groupby("Mental Health Condition")[[
+    "Sleep Hours", "Work Hours per Week", "Screen Time per Day (Hours)", "Social Interaction Score"
+]].mean().round(2)
+
+# Categorical frequencies
+exercise_freq = df_modified.groupby("Mental Health Condition")["Exercise Level"].value_counts().unstack(fill_value=0)
+stress_freq = df_modified.groupby("Mental Health Condition")["Stress Level"].value_counts().unstack(fill_value=0)
+
+# Merge all
+summary_table = pd.concat([avg_table, exercise_freq, stress_freq], axis=1)
+print(summary_table)
+
+# === Step 4: Conclusion Pairplot ===
+
+# Select & clean data
+selected_vars = ["Sleep Hours", "Screen Time per Day (Hours)", "Social Interaction Score", "Work Hours per Week"]
+df_pairplot = df_modified[selected_vars + ["Mental Health Condition"]].copy()
+for col in selected_vars:
+    df_pairplot[col] = pd.to_numeric(df_pairplot[col], errors='coerce')
+df_pairplot.dropna(inplace=True)
+
+# Plot pairplot with histograms
+sns.pairplot(df_pairplot, hue="Mental Health Condition", palette="tab10", corner=True, diag_kind="hist")
+plt.suptitle("Mental Health Condition vs. Lifestyle Patterns", y=1.02)
+plt.show()

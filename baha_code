@@ -1,0 +1,10 @@
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+plt.figure(figsize=(8, 5))
+sns.boxplot(data=df, x='Stress Level', y='Sleep Hours', palette='pastel')
+plt.title('Stress Level vs. Sleep Hours')
+plt.xlabel('Stress Level')
+plt.ylabel('Sleep Hours')
+plt.tight_layout()
+plt.show()
